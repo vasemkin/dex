@@ -15,7 +15,10 @@ contract DEX {
     function initialize(uint256 _tokenAmount) public payable returns (uint256) {
         require(lockedLiquidity == 0, "DEX already initialized.");
         require(token.balanceOf(msg.sender) >= _tokenAmount, "Token balance not sufficient.");
-        require(token.allowance(msg.sender, address(this)) >= _tokenAmount, "Token allowance not sufficient.");
+        require(
+            token.allowance(msg.sender, address(this)) >= _tokenAmount,
+            "Token allowance not sufficient."
+        );
         lockedLiquidity = address(this).balance;
         liquidity[msg.sender] = lockedLiquidity;
         token.transferFrom(msg.sender, address(this), _tokenAmount);
@@ -36,7 +39,7 @@ contract DEX {
     function ethToToken() public payable returns (uint256) {
         uint256 tokenReserve = token.balanceOf(address(this));
         uint256 tokensBought = price(msg.value, address(this).balance - msg.value, tokenReserve);
-        require(token.transfer(msg.sender, tokensBought));
+        require(token.transfer(msg.sender, tokensBought), "Error transferring the token.");
         return tokensBought;
     }
 
@@ -45,7 +48,10 @@ contract DEX {
         uint256 ethBought = price(tokens, tokenReserve, address(this).balance);
         (bool sent, ) = msg.sender.call{value: ethBought}("");
         require(sent, "Failed to send user eth.");
-        require(token.transferFrom(msg.sender, address(this), tokens));
+        require(
+            token.transferFrom(msg.sender, address(this), tokens),
+            "Error transferring the token."
+        );
         return ethBought;
     }
 
@@ -56,7 +62,10 @@ contract DEX {
         uint256 liquidityMinted = (msg.value * lockedLiquidity) / ethReserve;
         liquidity[msg.sender] += liquidityMinted;
         lockedLiquidity += liquidityMinted;
-        require(token.transferFrom(msg.sender, address(this), tokenAmount));
+        require(
+            token.transferFrom(msg.sender, address(this), tokenAmount),
+            "Error transeffing the token."
+        );
         return liquidityMinted;
     }
 
@@ -68,7 +77,7 @@ contract DEX {
         lockedLiquidity -= _liquidityAmount;
         (bool sent, ) = msg.sender.call{value: ethAmount}("");
         require(sent, "Failed to send user eth.");
-        require(token.transfer(msg.sender, tokenAmount));
+        require(token.transfer(msg.sender, tokenAmount), "Error transferring the token");
         return (ethAmount, tokenAmount);
     }
 }
