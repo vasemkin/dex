@@ -8,6 +8,9 @@ contract DEX {
     uint256 public lockedLiquidity;
     mapping(address => uint256) public liquidity;
 
+    event Deposit(address indexed _from, uint256 _tokenValue, uint256 _ethValue);
+    event Withdraw(address indexed _to, uint256 _tokenValue, uint256 _ethValue);
+
     constructor(address _token) {
         token = IERC20(_token);
     }
@@ -33,9 +36,9 @@ contract DEX {
         uint256 _inputReserve,
         uint256 _outputReserve
     ) public pure returns (uint256) {
-        uint256 amountWithFeee = _inputAmount * 997;
-        uint256 numerator = amountWithFeee * _outputReserve;
-        uint256 denominator = _inputReserve * 1000 + amountWithFeee;
+        uint256 amountWithFee = _inputAmount * 997;
+        uint256 numerator = amountWithFee * _outputReserve;
+        uint256 denominator = _inputReserve * 1000 + amountWithFee;
         return numerator / denominator;
     }
 
@@ -69,6 +72,7 @@ contract DEX {
             token.transferFrom(msg.sender, address(this), tokenAmount),
             "Error transeffing the token."
         );
+        emit Deposit(msg.sender, tokenAmount, msg.value);
         return liquidityMinted;
     }
 
@@ -81,6 +85,7 @@ contract DEX {
         (bool sent, ) = msg.sender.call{value: ethAmount}("");
         require(sent, "Failed to send user eth.");
         require(token.transfer(msg.sender, tokenAmount), "Error transferring the token");
+        emit Withdraw(msg.sender, tokenAmount, ethAmount);
         return (ethAmount, tokenAmount);
     }
 }
