@@ -21,7 +21,10 @@ contract DEX {
         );
         lockedLiquidity = address(this).balance;
         liquidity[msg.sender] = lockedLiquidity;
-        token.transferFrom(msg.sender, address(this), _tokenAmount);
+        require(
+            token.transferFrom(msg.sender, address(this), _tokenAmount),
+            "Error transferring tokens"
+        );
         return lockedLiquidity;
     }
 
