@@ -49,6 +49,14 @@ contract DEX {
         return tokensBought;
     }
 
+    function estimateTokenAmount(uint256 _eth, uint256 _gas) public view returns (uint256) {
+        return price(_eth, address(this).balance - _eth - _gas, token.balanceOf(address(this)));
+    }
+
+    function estimateEthAmount(uint256 _tokens) public view returns (uint256) {
+        return price(_tokens, token.balanceOf(address(this)), address(this).balance);
+    }
+
     function tokenToEth(uint256 tokens) public returns (uint256) {
         uint256 tokenReserve = token.balanceOf(address(this));
         uint256 ethBought = price(tokens, tokenReserve, address(this).balance);
