@@ -17,7 +17,7 @@ describe("CoolDEX Tests", function () {
         uniToken = (await uniTokenFactory.deploy()) as UniToken;
         await uniToken.deployed();
 
-        const dexFactory: DEX__factory = await ethers.getContractFactory("CoolDEX");
+        const dexFactory: DEX__factory = await ethers.getContractFactory("DEX");
         dex = (await dexFactory.deploy(token.address, uniToken.address)) as DEX;
         await dex.deployed();
 
