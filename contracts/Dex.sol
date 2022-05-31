@@ -1,6 +1,7 @@
 pragma solidity ^0.8.4;
 // SPDX-License-Identifier: MIT
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "hardhat/console.sol";
 
 contract DEX {
     IERC20 private token;
@@ -49,7 +50,7 @@ contract DEX {
         uint256 fromReserve = fromToken.balanceOf(address(this));
         uint256 toReserve = toToken.balanceOf(address(this));
 
-        uint256 tokensBought = price(_tokenAmount, fromReserve - _tokenAmount, toReserve);
+        uint256 tokensBought = price(_tokenAmount, fromReserve, toReserve);
         require(toToken.transfer(msg.sender, tokensBought), "Error transferring the token");
         require(
             fromToken.transferFrom(msg.sender, address(this), _tokenAmount),
@@ -61,12 +62,12 @@ contract DEX {
 
     function price(
         uint256 _inputAmount,
-        uint256 _inputReserve,
-        uint256 _outputReserve
+        uint256 _fromReserve,
+        uint256 _toReserve
     ) public pure returns (uint256) {
-        uint256 amountWithFee = _inputAmount * 997;
-        uint256 numerator = amountWithFee * _outputReserve;
-        uint256 denominator = _inputReserve * 1000 + amountWithFee;
+        uint256 numerator = _toReserve * _inputAmount * 997;
+        uint256 denominator = _fromReserve * 1000;
+
         return numerator / denominator;
     }
 
@@ -81,7 +82,10 @@ contract DEX {
         uint256 fromReserve = fromToken.balanceOf(address(this));
         uint256 toReserve = toToken.balanceOf(address(this));
 
-        return price(_tokenAmount, fromReserve - _tokenAmount, toReserve);
+        console.log("fromReserve", fromReserve);
+        console.log("toReserve", toReserve);
+
+        return price(_tokenAmount, fromReserve, toReserve);
     }
 
     function estimateDeposit(
