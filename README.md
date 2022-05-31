@@ -26,7 +26,7 @@ Open the source code and start editing!
 
 Make sure your Metamask chainId is 31337. It is 1337 by default.
 
-## ✅ Testing
+## Testing
 
 ```bash
 $ yarn typechain
@@ -43,7 +43,7 @@ $ yarn deploy:testnet
 
 This code is not audited. It is not recommended to deploy to mainnet.
 
-## 🏗️ Architecture / Main Layout
+## Architecture / Main Layout
 
 ```
 ./
