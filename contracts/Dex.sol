@@ -49,7 +49,7 @@ contract DEX {
         uint256 fromReserve = fromToken.balanceOf(address(this));
         uint256 toReserve = toToken.balanceOf(address(this));
 
-        uint256 tokensBought = price(_tokenAmount, toReserve - _tokenAmount, fromReserve);
+        uint256 tokensBought = price(_tokenAmount, fromReserve - _tokenAmount, toReserve);
         require(toToken.transfer(msg.sender, tokensBought), "Error transferring the token");
         require(
             fromToken.transferFrom(msg.sender, address(this), _tokenAmount),
@@ -81,7 +81,20 @@ contract DEX {
         uint256 fromReserve = fromToken.balanceOf(address(this));
         uint256 toReserve = toToken.balanceOf(address(this));
 
-        return price(_tokenAmount, toReserve - _tokenAmount, fromReserve);
+        return price(_tokenAmount, fromReserve - _tokenAmount, toReserve);
+    }
+
+    function estimateDeposit(
+        uint256 _amount,
+        address _baseToken,
+        address _token
+    ) public view returns (uint256) {
+        IERC20 base = IERC20(_baseToken);
+        IERC20 tok = IERC20(_token);
+        uint256 baseReserve = base.balanceOf(address(this));
+        uint256 tokReserve = tok.balanceOf(address(this));
+
+        return ((_amount * tokReserve) / baseReserve) + 1;
     }
 
     function deposit(

@@ -3,7 +3,7 @@ import { ethers, getNamedAccounts } from "hardhat";
 
 import type { DEX, DEX__factory, Token, Token__factory, UniToken, UniToken__factory } from "../typechain";
 
-describe("CoolDEX Tests", function () {
+describe("DEX Tests", function () {
     let token: Token;
     let uniToken: UniToken;
     let dex: DEX;
@@ -104,9 +104,11 @@ describe("CoolDEX Tests", function () {
             const initUni = await uniToken.balanceOf(dex.address);
             const initTok = await token.balanceOf(dex.address);
 
+            const estimate = await dex.estimateDeposit(value, uniToken.address, token.address);
+
             const approveUni = await uniToken.approve(dex.address, value);
             await approveUni.wait();
-            const approveTok = await token.approve(dex.address, value);
+            const approveTok = await token.approve(dex.address, estimate);
             await approveTok.wait();
 
             const tx = await dex.deposit(value, uniToken.address, token.address);

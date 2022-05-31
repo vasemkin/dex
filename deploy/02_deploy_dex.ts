@@ -8,7 +8,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     const { deployer } = await hre.getNamedAccounts();
     const token: Token = await hre.ethers.getContract("Token", deployer);
     const uniToken: UniToken = await hre.ethers.getContract("UniToken", deployer);
-    const amount = hre.ethers.utils.parseEther("10");
+    const amount = hre.ethers.utils.parseEther("10000");
     console.log("amount: " + hre.ethers.utils.formatEther(amount));
     console.log("deployer balance: " + hre.ethers.utils.formatEther(await token.balanceOf(deployer)));
 
