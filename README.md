@@ -8,6 +8,8 @@ Required:
 - [Yarn](https://classic.yarnpkg.com/en/docs/install/)
 - [Git](https://git-scm.com/downloads)
 
+Refer to `.env` for required keys.
+
 ```bash
 $ git clone https://github.com/vasemkin/dex.git
 $ cd dex
@@ -32,6 +34,14 @@ $ yarn test
 ```
 
 The tests are run on the hardhat network. It is different from localhost.
+
+## Deployment
+
+```
+$ yarn deploy:testnet
+```
+
+This code is not audited. It is not recommended to deploy to mainnet.
 
 ## 🏗️ Architecture / Main Layout
 

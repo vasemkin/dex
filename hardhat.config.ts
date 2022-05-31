@@ -38,9 +38,9 @@ const config: HardhatUserConfig = {
                 },
             ],
         },
-        ropsten: {
-            url: process.env.ROPSTEN_URL || "",
-            accounts: process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
+        testnet: {
+            url: process.env["TESTNET_RPC"] || "",
+            accounts: process.env.DEPLOYER_PK !== undefined ? [process.env.DEPLOYER_PK] : [],
         },
     },
     gasReporter: {
