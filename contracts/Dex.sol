@@ -1,34 +1,62 @@
 pragma solidity ^0.8.4;
 // SPDX-License-Identifier: MIT
-// import "hardhat/console.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 contract DEX {
     IERC20 private token;
+    IERC20 private uniToken;
     uint256 public lockedLiquidity;
     mapping(address => uint256) public liquidity;
 
-    event Deposit(address indexed _from, uint256 _tokenValue, uint256 _ethValue);
-    event Withdraw(address indexed _to, uint256 _tokenValue, uint256 _ethValue);
-
-    constructor(address _token) {
+    constructor(address _token, address _uniToken) {
         token = IERC20(_token);
+        uniToken = IERC20(_uniToken);
     }
 
     function initialize(uint256 _tokenAmount) public payable returns (uint256) {
         require(lockedLiquidity == 0, "DEX already initialized.");
         require(token.balanceOf(msg.sender) >= _tokenAmount, "Token balance not sufficient.");
+        require(token.balanceOf(msg.sender) >= _tokenAmount, "UniToken balance not sufficient.");
         require(
             token.allowance(msg.sender, address(this)) >= _tokenAmount,
-            "Token allowance not sufficient."
+            "Token allowance too low."
         );
-        lockedLiquidity = address(this).balance;
+        require(
+            uniToken.allowance(msg.sender, address(this)) >= _tokenAmount,
+            "UniToken allowance too low."
+        );
+        lockedLiquidity = _tokenAmount;
         liquidity[msg.sender] = lockedLiquidity;
         require(
             token.transferFrom(msg.sender, address(this), _tokenAmount),
             "Error transferring tokens"
         );
+        require(
+            uniToken.transferFrom(msg.sender, address(this), _tokenAmount),
+            "Error transferring tokens"
+        );
         return lockedLiquidity;
+    }
+
+    function swap(
+        uint256 _tokenAmount,
+        address _fromToken,
+        address _toToken
+    ) public returns (uint256) {
+        IERC20 fromToken = IERC20(_fromToken);
+        IERC20 toToken = IERC20(_toToken);
+
+        uint256 fromReserve = fromToken.balanceOf(address(this));
+        uint256 toReserve = toToken.balanceOf(address(this));
+
+        uint256 tokensBought = price(_tokenAmount, toReserve - _tokenAmount, fromReserve);
+        require(toToken.transfer(msg.sender, tokensBought), "Error transferring the token");
+        require(
+            fromToken.transferFrom(msg.sender, address(this), _tokenAmount),
+            "Error tranferring the token."
+        );
+
+        return tokensBought;
     }
 
     function price(
@@ -42,58 +70,62 @@ contract DEX {
         return numerator / denominator;
     }
 
-    function ethToToken() public payable returns (uint256) {
-        uint256 tokenReserve = token.balanceOf(address(this));
-        uint256 tokensBought = price(msg.value, address(this).balance - msg.value, tokenReserve);
-        require(token.transfer(msg.sender, tokensBought), "Error transferring the token.");
-        return tokensBought;
+    function estimateTokenAmount(
+        uint256 _tokenAmount,
+        address _fromToken,
+        address _toToken
+    ) public view returns (uint256) {
+        IERC20 fromToken = IERC20(_fromToken);
+        IERC20 toToken = IERC20(_toToken);
+
+        uint256 fromReserve = fromToken.balanceOf(address(this));
+        uint256 toReserve = toToken.balanceOf(address(this));
+
+        return price(_tokenAmount, toReserve - _tokenAmount, fromReserve);
     }
 
-    function estimateTokenAmount(uint256 _eth, uint256 _gas) public view returns (uint256) {
-        return price(_eth, address(this).balance - _eth - _gas, token.balanceOf(address(this)));
-    }
+    function deposit(
+        uint256 _amount,
+        address _baseToken,
+        address _token
+    ) public returns (uint256) {
+        IERC20 base = IERC20(_baseToken);
+        IERC20 tok = IERC20(_token);
+        uint256 baseReserve = base.balanceOf(address(this));
+        uint256 tokReserve = tok.balanceOf(address(this));
 
-    function estimateEthAmount(uint256 _tokens) public view returns (uint256) {
-        return price(_tokens, token.balanceOf(address(this)), address(this).balance);
-    }
+        uint256 tokenAmount = ((_amount * tokReserve) / baseReserve) + 1;
+        uint256 liquidityMinted = (_amount * lockedLiquidity) / baseReserve;
 
-    function tokenToEth(uint256 tokens) public returns (uint256) {
-        uint256 tokenReserve = token.balanceOf(address(this));
-        uint256 ethBought = price(tokens, tokenReserve, address(this).balance);
-        (bool sent, ) = msg.sender.call{value: ethBought}("");
-        require(sent, "Failed to send user eth.");
-        require(
-            token.transferFrom(msg.sender, address(this), tokens),
-            "Error transferring the token."
-        );
-        return ethBought;
-    }
-
-    function deposit() public payable returns (uint256) {
-        uint256 ethReserve = address(this).balance - msg.value;
-        uint256 tokenReserve = token.balanceOf(address(this));
-        uint256 tokenAmount = ((msg.value * tokenReserve) / ethReserve) + 1;
-        uint256 liquidityMinted = (msg.value * lockedLiquidity) / ethReserve;
         liquidity[msg.sender] += liquidityMinted;
         lockedLiquidity += liquidityMinted;
-        require(
-            token.transferFrom(msg.sender, address(this), tokenAmount),
-            "Error transeffing the token."
-        );
-        emit Deposit(msg.sender, tokenAmount, msg.value);
+
+        require(base.transferFrom(msg.sender, address(this), _amount), "Base token transfer Error");
+        require(tok.transferFrom(msg.sender, address(this), tokenAmount), "Token transfer Error");
+
         return liquidityMinted;
     }
 
-    function withdraw(uint256 _liquidityAmount) public returns (uint256, uint256) {
-        uint256 tokenReserve = token.balanceOf(address(this));
-        uint256 ethAmount = (_liquidityAmount * address(this).balance) / lockedLiquidity;
-        uint256 tokenAmount = (_liquidityAmount * tokenReserve) / lockedLiquidity;
-        liquidity[msg.sender] -= _liquidityAmount;
-        lockedLiquidity -= _liquidityAmount;
-        (bool sent, ) = msg.sender.call{value: ethAmount}("");
-        require(sent, "Failed to send user eth.");
-        require(token.transfer(msg.sender, tokenAmount), "Error transferring the token");
-        emit Withdraw(msg.sender, tokenAmount, ethAmount);
-        return (ethAmount, tokenAmount);
+    function withdraw(
+        uint256 _amount,
+        address _baseToken,
+        address _token
+    ) public returns (uint256, uint256) {
+        IERC20 base = IERC20(_baseToken);
+        IERC20 tok = IERC20(_token);
+
+        uint256 baseReserve = base.balanceOf(address(this));
+        uint256 tokReserve = tok.balanceOf(address(this));
+
+        uint256 baseAmount = (_amount * baseReserve) / lockedLiquidity;
+        uint256 tokAmount = (_amount * tokReserve) / lockedLiquidity;
+
+        liquidity[msg.sender] -= _amount;
+        lockedLiquidity -= _amount;
+
+        require(base.transfer(msg.sender, baseAmount), "Base token transfer Error");
+        require(tok.transfer(msg.sender, tokAmount), "Token transfer Error");
+
+        return (baseAmount, tokAmount);
     }
 }
