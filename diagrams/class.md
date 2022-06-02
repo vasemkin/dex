@@ -12,27 +12,24 @@ classDiagram
         + price()
         + estimateTokenAmount()
         + estimateDeposit()
-        + estimateWithdraw
+        + estimateWithdraw()
     }
 
     class TokenA {
-        + bytes32 name
-        + bytes32 symbol
         - _mint()
     }
 
     class TokenB {
-        + bytes32 name
-        + bytes32 symbol
         - _mint()
     }
 
     class ERC20 {
-        + uint256 totalSuuply
+        + totalSuuply()
         + transfer()
         + transferFrom()
         + approve()
         + allowance()
+        + balanceOf()
     }
 
     ERC20 <|-- TokenA
@@ -40,5 +37,4 @@ classDiagram
 
     TokenA ..> DEX
     TokenB ..> DEX
-
 ```
