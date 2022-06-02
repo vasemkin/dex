@@ -1,9 +1,9 @@
 ```mermaid
 sequenceDiagram
-participant T as Trader
-participant A as TokenA
-participant B as TokenB
-participant D as DEX
+    participant T as Trader
+    participant A as TokenA
+    participant B as TokenB
+    participant D as DEX
 
     T->>+D: estimateTokenAmount(amount, tokenA, tokenB)
     D-->>-T: tokenBAmount
