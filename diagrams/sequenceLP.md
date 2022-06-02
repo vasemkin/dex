@@ -5,6 +5,14 @@ sequenceDiagram
     participant B as TokenB
     participant D as DEX
 
+    L->>+D: estimateDepositAmount(amount, tokenA, tokenB)
+    D-->>-L: tokenBAmount
+
+    L->>+A: approve(amount, dex)
+    A-->>-L: tx.hash
+    L->>+B: approve(tokenBAmount, dex)
+    B-->>-L: tx.hash
+
     L->>+D: deposit(amount,tokenA, tokenB)
     par single transaction
         D->>+A: transferFrom(amount, trader, dex)
