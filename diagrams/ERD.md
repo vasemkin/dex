@@ -39,8 +39,8 @@ erDiagram
 
     DEPLOYER ||..|{ USER: is
 
-    DEX ||..|{ TOKEN_B_INSTANCE: call
-    DEX ||..|{ TOKEN_A_INSTANCE: call
+    DEX ||..|| TOKEN_B_CONTRACT: call
+    DEX ||..|| TOKEN_A_CONTRACT: call
 
     DEX {
         mapping liquidity
