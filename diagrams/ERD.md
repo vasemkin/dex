@@ -28,9 +28,9 @@ erDiagram
         abstract marketValue
     }
 
-    DEPLOYER ||..|{ TOKEN_B_INSTANCE: deploy
-    DEPLOYER ||..|{ TOKEN_A_INSTANCE: deploy
-    DEPLOYER ||..|{ DEX: deploy
+    DEPLOYER ||..|| TOKEN_B_CONTRACT: deploy
+    DEPLOYER ||..|| TOKEN_A_CONTRACT: deploy
+    DEPLOYER ||..|| DEX: deploy
 
     DEPLOYER {
         bytes20 address
