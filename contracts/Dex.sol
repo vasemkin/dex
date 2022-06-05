@@ -73,6 +73,10 @@ contract DEX {
         return numerator / denominator;
     }
 
+    function getLiquidity(address _lp) public view returns (uint256) {
+        return liquidity[_lp];
+    }
+
     function estimateTokenAmount(
         uint256 _tokenAmount,
         address _fromToken,
@@ -94,13 +98,16 @@ contract DEX {
         uint256 _amount,
         address _baseToken,
         address _token
-    ) public view returns (uint256) {
+    ) public view returns (uint256, uint256) {
         IERC20 base = IERC20(_baseToken);
         IERC20 tok = IERC20(_token);
         uint256 baseReserve = base.balanceOf(address(this));
         uint256 tokReserve = tok.balanceOf(address(this));
 
-        return ((_amount * tokReserve) / baseReserve) + 1;
+        uint256 tokAmount = ((_amount * tokReserve) / baseReserve) + 1;
+        uint256 liquidityMinted = (_amount * lockedLiquidity) / baseReserve;
+
+        return (tokAmount, liquidityMinted);
     }
 
     function deposit(
@@ -125,11 +132,11 @@ contract DEX {
         return liquidityMinted;
     }
 
-    function withdraw(
+    function estimateWithdraw(
         uint256 _amount,
         address _baseToken,
         address _token
-    ) public returns (uint256, uint256) {
+    ) public view returns (uint256, uint256) {
         IERC20 base = IERC20(_baseToken);
         IERC20 tok = IERC20(_token);
 
@@ -139,8 +146,27 @@ contract DEX {
         uint256 baseAmount = (_amount * baseReserve) / lockedLiquidity;
         uint256 tokAmount = (_amount * tokReserve) / lockedLiquidity;
 
-        liquidity[msg.sender] -= _amount;
-        lockedLiquidity -= _amount;
+        return (baseAmount, tokAmount);
+    }
+
+    function withdraw(
+        uint256 _liquidityAmount,
+        address _baseToken,
+        address _token
+    ) public returns (uint256, uint256) {
+        IERC20 base = IERC20(_baseToken);
+        IERC20 tok = IERC20(_token);
+
+        uint256 baseReserve = base.balanceOf(address(this));
+        uint256 tokReserve = tok.balanceOf(address(this));
+
+        uint256 baseAmount = (_liquidityAmount * baseReserve) / lockedLiquidity;
+        uint256 tokAmount = (_liquidityAmount * tokReserve) / lockedLiquidity;
+
+        require(liquidity[msg.sender] >= _liquidityAmount, "Not enough provided liquidity");
+
+        liquidity[msg.sender] -= _liquidityAmount;
+        lockedLiquidity -= _liquidityAmount;
 
         require(base.transfer(msg.sender, baseAmount), "Base token transfer Error");
         require(tok.transfer(msg.sender, tokAmount), "Token transfer Error");
