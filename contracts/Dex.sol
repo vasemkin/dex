@@ -51,6 +51,8 @@ contract DEX {
         uint256 toReserve = toToken.balanceOf(address(this));
 
         uint256 tokensBought = price(_tokenAmount, fromReserve, toReserve);
+        require(fromToken.balanceOf(address(this)) > tokensBought, "Not enough liquidity");
+
         require(toToken.transfer(msg.sender, tokensBought), "Error transferring the token");
         require(
             fromToken.transferFrom(msg.sender, address(this), _tokenAmount),
