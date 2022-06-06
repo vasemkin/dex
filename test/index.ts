@@ -108,7 +108,8 @@ describe("DEX Tests", function () {
 
             const approveUni = await uniToken.approve(dex.address, value);
             await approveUni.wait();
-            const approveTok = await token.approve(dex.address, estimate);
+
+            const approveTok = await token.approve(dex.address, estimate[0]);
             await approveTok.wait();
 
             const tx = await dex.deposit(value, uniToken.address, token.address);
